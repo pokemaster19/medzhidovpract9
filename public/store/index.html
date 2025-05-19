@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Интернет-магазин</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* Дополнительные пользовательские стили, если Tailwind не покрывает все нужды */
+        body {
+            font-family: 'Inter', sans-serif; /* Пример современного шрифта, можно подключить через Google Fonts */
+        }
+        /* Можно добавить кастомные стили для скроллбара, выделения текста и т.д. для "элегантности" */
+         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+    <div class="container mx-auto px-4 py-8">
+        <header class="mb-12 text-center">
+            <h1 class="text-4xl font-bold text-indigo-600">Наш Магазин</h1>
+            <p class="text-lg text-gray-600 mt-2">Лучшие товары по лучшим ценам</p>
+            
+            <div class="mt-6 mb-8 flex justify-center">
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="use-graphql" class="sr-only peer">
+                    <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                    <span class="ml-3 text-sm font-medium text-gray-700">Использовать GraphQL</span>
+                </label>
+            </div>
+            
+            <div class="flex flex-wrap justify-center gap-2 mb-4" id="graphql-fields-container" style="display: none;">
+                <label class="inline-flex items-center">
+                    <input type="checkbox" checked class="graphql-field form-checkbox h-4 w-4 text-indigo-600" value="id">
+                    <span class="ml-2 text-sm text-gray-700">ID</span>
+                </label>
+                <label class="inline-flex items-center">
+                    <input type="checkbox" checked class="graphql-field form-checkbox h-4 w-4 text-indigo-600" value="name">
+                    <span class="ml-2 text-sm text-gray-700">Название</span>
+                </label>
+                <label class="inline-flex items-center">
+                    <input type="checkbox" checked class="graphql-field form-checkbox h-4 w-4 text-indigo-600" value="price">
+                    <span class="ml-2 text-sm text-gray-700">Цена</span>
+                </label>
+                <label class="inline-flex items-center">
+                    <input type="checkbox" checked class="graphql-field form-checkbox h-4 w-4 text-indigo-600" value="description">
+                    <span class="ml-2 text-sm text-gray-700">Описание</span>
+                </label>
+                <label class="inline-flex items-center">
+                    <input type="checkbox" checked class="graphql-field form-checkbox h-4 w-4 text-indigo-600" value="categories">
+                    <span class="ml-2 text-sm text-gray-700">Категории</span>
+                </label>
+                <button id="apply-graphql-filters" class="ml-4 bg-indigo-600 text-white px-4 py-1 rounded-md text-sm hover:bg-indigo-700 transition-colors">Применить</button>
+            </div>
+        </header>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <div class="lg:col-span-3">
+                <div id="products-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+                    <!-- Карточки товаров будут здесь -->
+                </div>
+                
+                <div id="loading-indicator" class="text-center py-10 hidden">
+                    <p class="text-xl text-gray-500">Загрузка товаров...</p>
+                </div>
+
+                <div id="error-message" class="text-center py-10 hidden">
+                    <p class="text-xl text-red-500">Ошибка при загрузке товаров. Пожалуйста, попробуйте позже.</p>
+                </div>
+            </div>
+            
+            <!-- Чат поддержки -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden h-[600px] flex flex-col">
+                    <div class="bg-indigo-600 text-white p-4">
+                        <h2 class="text-lg font-semibold">Чат поддержки</h2>
+                    </div>
+                    
+                    <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3">
+                        <!-- Сообщения чата будут здесь -->
+                        <div class="text-center text-gray-500 text-sm py-2">
+                            Соединение с чатом поддержки...
+                        </div>
+                    </div>
+                    
+                    <div class="p-4 border-t">
+                        <div class="flex gap-2">
+                            <input 
+                                id="chat-input" 
+                                type="text" 
+                                placeholder="Введите сообщение..."
+                                class="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            >
+                            <button 
+                                id="send-message" 
+                                class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+                            >
+                                Отправить
+                            </button>
+                        </div>
+                        <div class="mt-2 text-center">
+                            <span id="connection-status" class="text-gray-500 text-sm">Отключено</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-gray-800 text-white text-center p-6 mt-12">
+        <p>&copy; 2025 Интернет-магазин. Все права защищены.</p>
+    </footer>
+
+    <script>
+        // Генерируем случайный ID пользователя для чата
+        const userId = 'user_' + Math.random().toString(36).substring(2, 10);
+        let chatSocket = null;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const useGraphQLCheckbox = document.getElementById('use-graphql');
+            const graphqlFieldsContainer = document.getElementById('graphql-fields-container');
+            const applyGraphqlFiltersButton = document.getElementById('apply-graphql-filters');
+            
+            // Обработчик переключения между REST и GraphQL
+            useGraphQLCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    graphqlFieldsContainer.style.display = 'flex';
+                } else {
+                    graphqlFieldsContainer.style.display = 'none';
+                    fetchProducts(); // Загрузить товары через REST API
+                }
+            });
+            
+            // Обработчик применения фильтров GraphQL
+            applyGraphqlFiltersButton.addEventListener('click', function() {
+                fetchProductsGraphQL();
+            });
+            
+            // Инициализация чата
+            initChat();
+            
+            // Первоначальная загрузка товаров
+            fetchProducts();
+        });
+        
+        // Инициализация чата поддержки
+        function initChat() {
+            const chatMessages = document.getElementById('chat-messages');
+            const chatInput = document.getElementById('chat-input');
+            const sendButton = document.getElementById('send-message');
+            const connectionStatus = document.getElementById('connection-status');
+            
+            // Подключение к WebSocket серверу
+            connectToChat();
+            
+            // Обработчик отправки сообщения
+            function sendMessage() {
+                if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
+                    showSystemMessage('Ошибка: нет подключения к серверу. Пожалуйста, подождите или перезагрузите страницу.');
+                    return;
+                }
+                
+                const message = chatInput.value.trim();
+                if (message) {
+                    chatSocket.send(JSON.stringify({
+                        text: message
+                    }));
+                    chatInput.value = '';
+                }
+            }
+            
+            // Обработчик клика на кнопку отправки
+            sendButton.addEventListener('click', sendMessage);
+            
+            // Обработчик нажатия Enter в поле ввода
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            
+            // Функция подключения к чату
+            function connectToChat() {
+                const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${wsProtocol}//${window.location.hostname}:8081/ws/chat/user/${userId}`;
+                
+                chatSocket = new WebSocket(wsUrl);
+                
+                // Обработчик открытия соединения
+                chatSocket.onopen = function() {
+                    connectionStatus.textContent = 'Подключено';
+                    connectionStatus.classList.remove('text-gray-500', 'text-red-500');
+                    connectionStatus.classList.add('text-green-500');
+                    chatMessages.innerHTML = ''; // Очищаем предыдущие сообщения
+                };
+                
+                // Обработчик получения сообщения
+                chatSocket.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    addMessageToChat(data);
+                };
+                
+                // Обработчик ошибки
+                chatSocket.onerror = function(error) {
+                    console.error('WebSocket Error:', error);
+                    connectionStatus.textContent = 'Ошибка подключения';
+                    connectionStatus.classList.remove('text-gray-500', 'text-green-500');
+                    connectionStatus.classList.add('text-red-500');
+                    showSystemMessage('Ошибка подключения к серверу чата.');
+                };
+                
+                // Обработчик закрытия соединения
+                chatSocket.onclose = function(event) {
+                    connectionStatus.textContent = 'Отключено';
+                    connectionStatus.classList.remove('text-green-500');
+                    connectionStatus.classList.add('text-gray-500');
+                    
+                    // Пытаемся переподключиться через 3 секунды
+                    setTimeout(function() {
+                        if (chatSocket.readyState === WebSocket.CLOSED) {
+                            showSystemMessage('Переподключение...');
+                            connectToChat();
+                        }
+                    }, 3000);
+                };
+            }
+            
+            // Функция для отображения системного сообщения
+            function showSystemMessage(text) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'text-center text-gray-500 text-sm py-2';
+                messageDiv.textContent = text;
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            // Функция добавления сообщения в чат
+            function addMessageToChat(message) {
+                const messageDiv = document.createElement('div');
+                
+                // Определяем тип сообщения и применяем соответствующие стили
+                if (message.sender_type === 'system') {
+                    // Системное сообщение
+                    messageDiv.className = 'text-center text-gray-500 text-sm py-2';
+                    messageDiv.textContent = message.text;
+                } else if (message.sender_type === 'user') {
+                    // Сообщение от пользователя
+                    if (message.user_id === userId) {
+                        // Мое сообщение
+                        messageDiv.className = 'bg-indigo-100 rounded-lg p-3 ml-auto max-w-[80%] break-words';
+                        messageDiv.innerHTML = `
+                            <div class="text-indigo-800">${escapeHtml(message.text)}</div>
+                            <div class="text-xs text-right text-gray-500 mt-1">${formatTimestamp(message.timestamp)}</div>
+                        `;
+                    } else {
+                        // Сообщение от другого пользователя
+                        messageDiv.className = 'bg-gray-100 rounded-lg p-3 mr-auto max-w-[80%] break-words';
+                        messageDiv.innerHTML = `
+                            <div class="text-gray-800">${escapeHtml(message.text)}</div>
+                            <div class="text-xs text-gray-500 mt-1">Пользователь · ${formatTimestamp(message.timestamp)}</div>
+                        `;
+                    }
+                } else if (message.sender_type === 'admin') {
+                    // Сообщение от администратора
+                    messageDiv.className = 'bg-green-100 rounded-lg p-3 mr-auto max-w-[80%] break-words';
+                    messageDiv.innerHTML = `
+                        <div class="text-green-800">${escapeHtml(message.text)}</div>
+                        <div class="text-xs text-gray-500 mt-1">Администратор · ${formatTimestamp(message.timestamp)}</div>
+                    `;
+                }
+                
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            // Форматирование временной метки
+            function formatTimestamp(timestamp) {
+                const date = new Date(timestamp);
+                return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
+            
+            // Экранирование HTML
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        }
+
+        async function fetchProducts() {
+            const container = document.getElementById('products-container');
+            const loadingIndicator = document.getElementById('loading-indicator');
+            const errorMessage = document.getElementById('error-message');
+            const useGraphQL = document.getElementById('use-graphql').checked;
+            
+            if (useGraphQL) {
+                fetchProductsGraphQL();
+                return;
+            }
+            
+            loadingIndicator.classList.remove('hidden');
+            container.innerHTML = ''; // Очищаем предыдущие товары
+            errorMessage.classList.add('hidden');
+
+            try {
+                const response = await fetch('http://localhost:3001/api/products');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const products = await response.json();
+                displayProducts(products);
+            } catch (error) {
+                console.error('Ошибка при загрузке товаров:', error);
+                errorMessage.classList.remove('hidden');
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+        
+        async function fetchProductsGraphQL() {
+            const container = document.getElementById('products-container');
+            const loadingIndicator = document.getElementById('loading-indicator');
+            const errorMessage = document.getElementById('error-message');
+            
+            loadingIndicator.classList.remove('hidden');
+            container.innerHTML = ''; // Очищаем предыдущие товары
+            errorMessage.classList.add('hidden');
+            
+            // Получаем выбранные поля для GraphQL запроса
+            const selectedFields = getSelectedGraphQLFields();
+            if (selectedFields.length === 0) {
+                errorMessage.textContent = "Пожалуйста, выберите хотя бы одно поле для отображения";
+                errorMessage.classList.remove('hidden');
+                loadingIndicator.classList.add('hidden');
+                return;
+            }
+            
+            const fieldsString = selectedFields.join(' ');
+            
+            // Формируем GraphQL запрос с выбранными полями
+            const query = `
+                query {
+                    products {
+                        ${fieldsString}
+                    }
+                }
+            `;
+            
+            try {
+                const response = await fetch('http://localhost:3001/graphql', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.errors) {
+                    throw new Error(result.errors[0].message);
+                }
+                
+                displayProducts(result.data.products);
+            } catch (error) {
+                console.error('Ошибка при загрузке товаров через GraphQL:', error);
+                errorMessage.textContent = `Ошибка при загрузке товаров: ${error.message}`;
+                errorMessage.classList.remove('hidden');
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+        
+        function getSelectedGraphQLFields() {
+            const checkboxes = document.querySelectorAll('.graphql-field:checked');
+            return Array.from(checkboxes).map(checkbox => checkbox.value);
+        }
+
+        function displayProducts(products) {
+            const container = document.getElementById('products-container');
+            
+            if (!products || products.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-500 col-span-full">Товары не найдены.</p>';
+                return;
+            }
+            
+            products.forEach(product => {
+                const productCard = document.createElement('div');
+                productCard.className = 'bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 ease-in-out';
+                
+                // Формируем HTML содержимое карточки в зависимости от наличия полей
+                let cardContent = `
+                    <div class="p-6">
+                `;
+                
+                // Если поле доступно, добавляем его в карточку
+                if (product.name !== undefined) {
+                    cardContent += `<h3 class="text-xl font-semibold text-gray-800 mb-2 truncate" title="${product.name}">${product.name}</h3>`;
+                } else {
+                    cardContent += `<h3 class="text-xl font-semibold text-gray-500 mb-2">Название недоступно</h3>`;
+                }
+                
+                if (product.price !== undefined) {
+                    cardContent += `<p class="text-2xl font-bold text-indigo-600 mb-3">${parseFloat(product.price).toLocaleString('ru-RU', { style: 'currency', currency: 'RUB' })}</p>`;
+                }
+                
+                if (product.description !== undefined) {
+                    cardContent += `<p class="text-gray-600 text-sm mb-4 h-20 overflow-y-auto">${product.description}</p>`;
+                }
+                
+                if (product.categories !== undefined && product.categories.length > 0) {
+                    cardContent += `
+                        <div class="mt-auto pt-4 border-t border-gray-200">
+                            <p class="text-xs text-gray-500 mb-1">Категории:</p>
+                            <div class="flex flex-wrap gap-2">
+                                ${product.categories.map(category => `<span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-xs font-medium">${category}</span>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                cardContent += `</div>`;
+                
+                // Добавляем изображение-заглушку, если оно доступно
+                if (product.name !== undefined) {
+                    const imageUrl = `https://via.placeholder.com/300x200.png?text=${encodeURIComponent(product.name)}`;
+                    cardContent = `<img src="${imageUrl}" alt="${product.name}" class="w-full h-48 object-cover">` + cardContent;
+                }
+                
+                productCard.innerHTML = cardContent;
+                container.appendChild(productCard);
+            });
+        }
+    </script>
+
+<div id="minimax-floating-ball">
+  <div class="minimax-ball-content">
+    <div class="minimax-logo-wave"></div>
+    <span class="minimax-ball-text">Created by MiniMax Agent</span>
+  </div>
+  <div class="minimax-close-icon">&times;</div>
+</div>
+<style>
+  #minimax-floating-ball {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 10px 12px;
+    background: #222222;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    color: #F8F8F8;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    z-index: 9999;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  
+  #minimax-floating-ball:hover {
+    transform: translateY(-2px);
+    background: #383838;
+  }
+  
+  .minimax-ball-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .minimax-logo-wave {
+    width: 26px;
+    height: 22px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='22' viewBox='0 0 26 22' fill='none'%3E%3Cg clip-path='url(%23clip0_3442_102412)'%3E%3Cpath d='M12.8405 14.6775C12.8405 14.9897 13.0932 15.2424 13.4055 15.2424C13.7178 15.2424 13.9705 14.9897 13.9705 14.6775V2.98254C13.9705 1.88957 13.0809 1 11.9879 1C10.895 1 10.0054 1.88957 10.0054 2.98254V11.566V17.1068C10.0054 17.5773 9.62327 17.9594 9.1528 17.9594C8.68233 17.9594 8.30021 17.5773 8.30021 17.1068V8.04469C8.30021 6.95172 7.41063 6.06215 6.31767 6.06215C5.22471 6.06215 4.33513 6.95172 4.33513 8.04469V11.8855C4.33513 12.3559 3.953 12.7381 3.48254 12.7381C3.01207 12.7381 2.62994 12.3559 2.62994 11.8855V10.4936C2.62994 10.1813 2.37725 9.92861 2.06497 9.92861C1.7527 9.92861 1.5 10.1813 1.5 10.4936V11.8855C1.5 12.9784 2.38957 13.868 3.48254 13.868C4.5755 13.868 5.46508 12.9784 5.46508 11.8855V8.04469C5.46508 7.57422 5.8472 7.19209 6.31767 7.19209C6.78814 7.19209 7.17026 7.57422 7.17026 8.04469V17.1068C7.17026 18.1998 8.05984 19.0894 9.1528 19.0894C10.2458 19.0894 11.1353 18.1998 11.1353 17.1068V2.98254C11.1353 2.51207 11.5175 2.12994 11.9879 2.12994C12.4584 2.12994 12.8405 2.51207 12.8405 2.98254V14.6775Z' fill='%23F8F8F8'/%3E%3Cpath d='M23.3278 6.06215C22.2348 6.06215 21.3452 6.95172 21.3452 8.04469V15.6143C21.3452 16.0847 20.9631 16.4669 20.4926 16.4669C20.0222 16.4669 19.6401 16.0847 19.6401 15.6143V2.98254C19.6401 1.88957 18.7505 1 17.6575 1C16.5645 1 15.675 1.88957 15.675 2.98254V19.0175C15.675 19.4879 15.2928 19.8701 14.8224 19.8701C14.3519 19.8701 13.9698 19.4879 13.9698 19.0175V17.0329C13.9698 16.7206 13.7171 16.4679 13.4048 16.4679C13.0925 16.4679 12.8398 16.7206 12.8398 17.0329V19.0175C12.8398 20.1104 13.7294 21 14.8224 21C15.9153 21 16.8049 20.1104 16.8049 19.0175V2.98254C16.8049 2.51207 17.187 2.12994 17.6575 2.12994C18.128 2.12994 18.5101 2.51207 18.5101 2.98254V15.6143C18.5101 16.7072 19.3997 17.5968 20.4926 17.5968C21.5856 17.5968 22.4752 16.7072 22.4752 15.6143V8.04469C22.4752 7.57422 22.8573 7.19209 23.3278 7.19209C23.7982 7.19209 24.1804 7.57422 24.1804 8.04469V14.6775C24.1804 14.9897 24.4331 15.2424 24.7453 15.2424C25.0576 15.2424 25.3103 14.9897 25.3103 14.6775V8.04469C25.3103 6.95172 24.4207 6.06215 23.3278 6.06215Z' fill='%23F8F8F8'/%3E%3C/g%3E%3Cdefs%3E%3CclipPath id='clip0_3442_102412'%3E%3Crect width='25' height='22' fill='white' transform='translate(0.5)'/%3E%3C/clipPath%3E%3C/defs%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+  }
+  
+  .minimax-ball-text {
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  
+  .minimax-close-icon {
+    margin-left: 8px;
+    font-size: 16px;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+  }
+  
+  .minimax-close-icon:hover {
+    opacity: 1;
+  }
+</style>
+<script>
+  // Add simple animation when the page loads
+  document.addEventListener('DOMContentLoaded', function() {
+    const ball = document.getElementById('minimax-floating-ball');
+    ball.style.opacity = '0';
+    ball.style.transform = 'translateY(20px)';
+    
+    setTimeout(() => {
+      ball.style.opacity = '1';
+      ball.style.transform = 'translateY(0)';
+    }, 500);
+    
+    // Handle logo click
+    const ballContent = ball.querySelector('.minimax-ball-content');
+    ballContent.addEventListener('click', function(e) {
+      e.stopPropagation();
+      window.open('https://agent.minimax.io/agent', '_blank');
+      ball.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+        ball.style.transform = 'scale(1)';
+      }, 100);
+    });
+    
+    // Handle close button click
+    const closeIcon = ball.querySelector('.minimax-close-icon');
+    closeIcon.addEventListener('click', function(e) {
+      e.stopPropagation();
+      ball.style.opacity = '0';
+      ball.style.transform = 'translateY(20px)';
+      
+      // Hide the ball after animation completes
+      setTimeout(() => {
+        ball.style.display = 'none';
+      }, 300);
+    });
+  });
+</script>
+
+</body>
+</html>

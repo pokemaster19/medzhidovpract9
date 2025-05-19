@@ -1,0 +1,25 @@
+version: '3'
+
+services:
+  # Сервис магазина (Store)
+  store:
+    build:
+      context: ./store_backend
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./data:/app/data
+      - ./public/store:/app/public/store
+    restart: unless-stopped
+
+  # Сервис админ-панели (Admin)
+  admin:
+    build:
+      context: ./admin_backend
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./data:/app/data
+      - ./public/admin:/app/public/admin
+      - ./docs:/app/docs
+    restart: unless-stopped

@@ -1,0 +1,289 @@
+openapi: 3.0.0
+info:
+  title: API Панели Администратора Интернет-магазина
+  description: |
+    API для управления товарами в интернет-магазине.
+    Позволяет получать список товаров, добавлять новые товары, 
+    редактировать информацию о существующих товарах и удалять товары.
+  version: 1.0.0
+  contact:
+    name: Администратор системы
+
+servers:
+  - url: http://localhost:8081
+    description: Локальный сервер разработки (порт 8081)
+
+tags:
+  - name: products
+    description: Операции с товарами
+
+paths:
+  /admin/api/products:
+    get:
+      tags:
+        - products
+      summary: Получение списка всех товаров
+      description: Возвращает полный список всех товаров, доступных в магазине
+      operationId: getProducts
+      responses:
+        '200':
+          description: Успешное получение списка товаров
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+              example:
+                - id: "1"
+                  name: "Ноутбук 'Молния'"
+                  price: 99990.00
+                  description: "Сверхбыстрый ноутбук для профессионалов и геймеров."
+                  categories: ["Электроника", "Компьютеры"]
+                - id: "2"
+                  name: "Смартфон 'Галактика S25'"
+                  price: 75500.00
+                  description: "Флагманский смартфон с невероятной камерой и производительностью."
+                  categories: ["Электроника", "Телефоны"]
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Ошибка загрузки товаров"
+
+    post:
+      tags:
+        - products
+      summary: Добавление одного или нескольких товаров
+      description: Добавляет новые товары в каталог. Для каждого товара без указанного ID будет сгенерирован уникальный ID.
+      operationId: addProducts
+      requestBody:
+        description: Массив с данными о новых товарах
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/ProductCreate'
+            example:
+              - name: "Беспроводные наушники Premium"
+                price: 12500.00
+                description: "Наушники с активным шумоподавлением и высоким качеством звука."
+                categories: ["Электроника", "Аудио"]
+              - name: "Фитнес-браслет Sport+"
+                price: 4900.00
+                description: "Водонепроницаемый браслет для отслеживания физической активности."
+                categories: ["Электроника", "Спорт"]
+      responses:
+        '200':
+          description: Товары успешно добавлены
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /admin/api/products/{product_id}:
+    parameters:
+      - name: product_id
+        in: path
+        description: ID товара
+        required: true
+        schema:
+          type: string
+        example: "1"
+
+    put:
+      tags:
+        - products
+      summary: Редактирование информации о товаре
+      description: Обновляет данные товара с указанным ID. Можно обновить любое из полей (имя, цену, описание, категории).
+      operationId: updateProduct
+      requestBody:
+        description: Данные для обновления товара
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductUpdate'
+            example:
+              name: "Обновленное название товара"
+              price: 89990.00
+              description: "Обновленное описание товара"
+              categories: ["Новая категория", "Электроника"]
+      responses:
+        '200':
+          description: Товар успешно обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Товар с указанным ID не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Товар с ID 999 не найден"
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - products
+      summary: Удаление товара
+      description: Удаляет товар с указанным ID
+      operationId: deleteProduct
+      responses:
+        '200':
+          description: Товар успешно удален
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Товар с ID 1 успешно удален"
+              example:
+                message: "Товар с ID 1 успешно удален"
+        '404':
+          description: Товар с указанным ID не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Товар с ID 999 не найден"
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    Product:
+      type: object
+      required:
+        - id
+        - name
+        - price
+        - description
+        - categories
+      properties:
+        id:
+          type: string
+          description: Уникальный идентификатор товара
+          example: "1"
+        name:
+          type: string
+          description: Название товара
+          example: "Ноутбук 'Молния'"
+        price:
+          type: number
+          format: float
+          description: Цена товара в рублях
+          example: 99990.00
+        description:
+          type: string
+          description: Описание товара
+          example: "Сверхбыстрый ноутбук для профессионалов и геймеров."
+        categories:
+          type: array
+          description: Список категорий, к которым относится товар
+          items:
+            type: string
+          example: ["Электроника", "Компьютеры"]
+
+    ProductCreate:
+      type: object
+      required:
+        - name
+        - price
+        - description
+        - categories
+      properties:
+        id:
+          type: string
+          description: Уникальный идентификатор товара (опционально, если не указан - будет сгенерирован автоматически)
+          example: "6"
+        name:
+          type: string
+          description: Название товара
+          example: "Беспроводные наушники Premium"
+        price:
+          type: number
+          format: float
+          description: Цена товара в рублях
+          example: 12500.00
+        description:
+          type: string
+          description: Описание товара
+          example: "Наушники с активным шумоподавлением и высоким качеством звука."
+        categories:
+          type: array
+          description: Список категорий, к которым относится товар
+          items:
+            type: string
+          example: ["Электроника", "Аудио"]
+
+    ProductUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Название товара
+          example: "Обновленное название товара"
+        price:
+          type: number
+          format: float
+          description: Цена товара в рублях
+          example: 89990.00
+        description:
+          type: string
+          description: Описание товара
+          example: "Обновленное описание товара"
+        categories:
+          type: array
+          description: Список категорий, к которым относится товар
+          items:
+            type: string
+          example: ["Новая категория", "Электроника"]
+
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Подробное описание ошибки
+          example: "Внутренняя ошибка сервера"

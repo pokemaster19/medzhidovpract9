@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Панель администратора для управления товарами интернет-магазина">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <title>Панель администратора</title>
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f7f9fc;
+            color: #333;
+        }
+        h1, h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        h1 {
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .container {
+            margin-bottom: 30px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            padding: 12px 15px;
+            border: 1px solid #eaeaea;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: 500;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        tr:hover {
+            background-color: #f1f4f7;
+        }
+        .product-form {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #eaeaea;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+            transition: border 0.3s ease;
+        }
+        .form-group input:focus, .form-group textarea:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button.delete {
+            background-color: #e74c3c;
+        }
+        button.delete:hover {
+            background-color: #c0392b;
+        }
+        button.edit {
+            background-color: #2ecc71;
+        }
+        button.edit:hover {
+            background-color: #27ae60;
+        }
+        .categories-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 5px;
+        }
+        .category-tag {
+            background-color: #e1f5fe;
+            color: #0288d1;
+            padding: 4px 10px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        #notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            color: white;
+            border-radius: 6px;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @media (max-width: 768px) {
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+            .container {
+                padding: 15px;
+            }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <h1>Панель администратора</h1>
+    
+    <div id="notification"></div>
+    <div id="loadingIndicator" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 999;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; text-align: center;">
+            <div class="spinner" style="border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; margin: 0 auto 15px; animation: spin 1s linear infinite;"></div>
+            <div>Загрузка...</div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h2>Добавить новый товар</h2>
+        <div class="product-form">
+            <div class="form-group">
+                <label for="productName">Название:</label>
+                <input type="text" id="productName" required>
+            </div>
+            <div class="form-group">
+                <label for="productPrice">Стоимость (руб.):</label>
+                <input type="number" id="productPrice" step="0.01" min="0" required>
+            </div>
+            <div class="form-group">
+                <label for="productDescription">Описание:</label>
+                <textarea id="productDescription" rows="3" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="productCategories">Категории (через запятую):</label>
+                <input type="text" id="productCategories" placeholder="Например: Электроника, Компьютеры">
+            </div>
+            <button id="addProductBtn">Добавить товар</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Список товаров</h2>
+        <table id="productsTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Название</th>
+                    <th>Стоимость</th>
+                    <th>Описание</th>
+                    <th>Категории</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Здесь будут строки с товарами -->
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Чат поддержки -->
+    <div class="container">
+        <h2>Чат поддержки клиентов</h2>
+        <div style="height: 500px; display: flex; flex-direction: column;">
+            <div style="background-color: #3498db; color: white; padding: 10px 15px; border-radius: 4px 4px 0 0;">
+                <h3 style="margin: 0">Чат с покупателями</h3>
+            </div>
+            <div id="chat-messages" style="flex: 1; overflow-y: auto; padding: 15px; background-color: #f9f9f9; border: 1px solid #ddd; border-bottom: none;">
+                <!-- Здесь будут сообщения чата -->
+                <div style="text-align: center; color: #6c757d; font-size: 0.9em; padding: 5px 10px; margin: 10px auto; background-color: #e2e3e5; border-radius: 4px;">
+                    Соединение с чатом...
+                </div>
+            </div>
+            <div style="display: flex; padding: 10px; background-color: #fff; border: 1px solid #ddd; border-radius: 0 0 4px 4px;">
+                <input type="text" id="chat-input" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-right: 10px;" placeholder="Введите сообщение...">
+                <button id="send-message">Отправить</button>
+            </div>
+            <div style="text-align: center; margin-top: 5px; font-size: 0.9em;">
+                <span id="connection-status" style="color: #dc3545;">Отключено</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для редактирования (используем простую реализацию) -->
+    <div class="container" id="editFormContainer" style="display:none;">
+        <h2>Редактировать товар</h2>
+        <div class="product-form">
+            <input type="hidden" id="editProductId">
+            <div class="form-group">
+                <label for="editProductName">Название:</label>
+                <input type="text" id="editProductName" required>
+            </div>
+            <div class="form-group">
+                <label for="editProductPrice">Стоимость (руб.):</label>
+                <input type="number" id="editProductPrice" step="0.01" min="0" required>
+            </div>
+            <div class="form-group">
+                <label for="editProductDescription">Описание:</label>
+                <textarea id="editProductDescription" rows="3" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="editProductCategories">Категории (через запятую):</label>
+                <input type="text" id="editProductCategories">
+            </div>
+            <button id="saveEditBtn">Сохранить изменения</button>
+            <button id="cancelEditBtn" style="background-color: #ccc;">Отмена</button>
+        </div>
+    </div>
+
+    <script>
+        // URL API на сервере администратора
+        const API_URL = 'http://localhost:8081/admin/api/products';
+        
+        // Генерируем случайный ID администратора для чата
+        const adminId = 'admin_' + Math.random().toString(36).substring(2, 10);
+        let chatSocket = null;
+        
+        // Загрузка товаров при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProducts();
+            
+            // Обработчики событий для кнопок
+            document.getElementById('addProductBtn').addEventListener('click', addProduct);
+            document.getElementById('saveEditBtn').addEventListener('click', saveProductEdit);
+            document.getElementById('cancelEditBtn').addEventListener('click', cancelEdit);
+            
+            // Инициализация чата поддержки
+            initChat();
+        });
+        
+        // Инициализация чата поддержки
+        function initChat() {
+            const chatMessages = document.getElementById('chat-messages');
+            const chatInput = document.getElementById('chat-input');
+            const sendButton = document.getElementById('send-message');
+            const connectionStatus = document.getElementById('connection-status');
+            
+            // Подключение к WebSocket серверу
+            connectToChat();
+            
+            // Обработчик отправки сообщения
+            function sendMessage() {
+                if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
+                    showSystemMessage('Ошибка: нет подключения к серверу. Пожалуйста, подождите или перезагрузите страницу.');
+                    return;
+                }
+                
+                const message = chatInput.value.trim();
+                if (message) {
+                    chatSocket.send(JSON.stringify({
+                        text: message
+                    }));
+                    chatInput.value = '';
+                }
+            }
+            
+            // Обработчик клика на кнопку отправки
+            sendButton.addEventListener('click', sendMessage);
+            
+            // Обработчик нажатия Enter в поле ввода
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            
+            // Функция подключения к чату
+            function connectToChat() {
+                const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${wsProtocol}//${window.location.hostname}:8081/ws/chat/admin/${adminId}`;
+                
+                chatSocket = new WebSocket(wsUrl);
+                
+                // Обработчик открытия соединения
+                chatSocket.onopen = function() {
+                    connectionStatus.textContent = 'Подключено';
+                    connectionStatus.style.color = '#28a745';
+                    chatMessages.innerHTML = ''; // Очищаем предыдущие сообщения
+                };
+                
+                // Обработчик получения сообщения
+                chatSocket.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    addMessageToChat(data);
+                };
+                
+                // Обработчик ошибки
+                chatSocket.onerror = function(error) {
+                    console.error('WebSocket Error:', error);
+                    connectionStatus.textContent = 'Ошибка подключения';
+                    connectionStatus.style.color = '#dc3545';
+                    showSystemMessage('Ошибка подключения к серверу чата.');
+                };
+                
+                // Обработчик закрытия соединения
+                chatSocket.onclose = function(event) {
+                    connectionStatus.textContent = 'Отключено';
+                    connectionStatus.style.color = '#dc3545';
+                    
+                    // Пытаемся переподключиться через 3 секунды
+                    setTimeout(function() {
+                        if (chatSocket.readyState === WebSocket.CLOSED) {
+                            showSystemMessage('Переподключение...');
+                            connectToChat();
+                        }
+                    }, 3000);
+                };
+            }
+            
+            // Функция для отображения системного сообщения
+            function showSystemMessage(text) {
+                const messageDiv = document.createElement('div');
+                messageDiv.style.textAlign = 'center';
+                messageDiv.style.color = '#6c757d';
+                messageDiv.style.fontSize = '0.9em';
+                messageDiv.style.padding = '5px 10px';
+                messageDiv.style.margin = '10px auto';
+                messageDiv.style.backgroundColor = '#e2e3e5';
+                messageDiv.style.borderRadius = '4px';
+                messageDiv.textContent = text;
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            // Функция добавления сообщения в чат
+            function addMessageToChat(message) {
+                const messageDiv = document.createElement('div');
+                
+                // Стили для разных типов сообщений
+                if (message.sender_type === 'system') {
+                    // Системное сообщение
+                    messageDiv.style.textAlign = 'center';
+                    messageDiv.style.color = '#6c757d';
+                    messageDiv.style.fontSize = '0.9em';
+                    messageDiv.style.padding = '5px 10px';
+                    messageDiv.style.margin = '10px auto';
+                    messageDiv.style.backgroundColor = '#e2e3e5';
+                    messageDiv.style.borderRadius = '4px';
+                    messageDiv.textContent = message.text;
+                } else if (message.sender_type === 'admin') {
+                    // Сообщение от администратора
+                    messageDiv.style.backgroundColor = '#d4edda';
+                    messageDiv.style.padding = '8px 12px';
+                    messageDiv.style.borderRadius = '8px';
+                    messageDiv.style.marginBottom = '10px';
+                    messageDiv.style.maxWidth = '80%';
+                    messageDiv.style.wordBreak = 'break-word';
+                    
+                    if (message.user_id === adminId) {
+                        // Мое сообщение
+                        messageDiv.style.marginLeft = 'auto';
+                        messageDiv.style.marginRight = '0';
+                        
+                        const textElement = document.createElement('div');
+                        textElement.textContent = message.text;
+                        
+                        const metaElement = document.createElement('div');
+                        metaElement.style.fontSize = '0.8em';
+                        metaElement.style.color = '#6c757d';
+                        metaElement.style.marginTop = '4px';
+                        metaElement.textContent = formatTimestamp(message.timestamp);
+                        
+                        messageDiv.appendChild(textElement);
+                        messageDiv.appendChild(metaElement);
+                    } else {
+                        // Сообщение от другого администратора
+                        messageDiv.style.marginRight = 'auto';
+                        messageDiv.style.marginLeft = '0';
+                        
+                        const textElement = document.createElement('div');
+                        textElement.textContent = message.text;
+                        
+                        const metaElement = document.createElement('div');
+                        metaElement.style.fontSize = '0.8em';
+                        metaElement.style.color = '#6c757d';
+                        metaElement.style.marginTop = '4px';
+                        metaElement.textContent = 'Другой админ · ' + formatTimestamp(message.timestamp);
+                        
+                        messageDiv.appendChild(textElement);
+                        messageDiv.appendChild(metaElement);
+                    }
+                } else if (message.sender_type === 'user') {
+                    // Сообщение от пользователя
+                    messageDiv.style.backgroundColor = '#f8f9fa';
+                    messageDiv.style.padding = '8px 12px';
+                    messageDiv.style.borderRadius = '8px';
+                    messageDiv.style.marginBottom = '10px';
+                    messageDiv.style.maxWidth = '80%';
+                    messageDiv.style.wordBreak = 'break-word';
+                    messageDiv.style.marginRight = 'auto';
+                    messageDiv.style.marginLeft = '0';
+                    
+                    const textElement = document.createElement('div');
+                    textElement.textContent = message.text;
+                    
+                    const metaElement = document.createElement('div');
+                    metaElement.style.fontSize = '0.8em';
+                    metaElement.style.color = '#6c757d';
+                    metaElement.style.marginTop = '4px';
+                    metaElement.textContent = 'Пользователь · ' + formatTimestamp(message.timestamp);
+                    
+                    messageDiv.appendChild(textElement);
+                    messageDiv.appendChild(metaElement);
+                }
+                
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            // Форматирование временной метки
+            function formatTimestamp(timestamp) {
+                const date = new Date(timestamp);
+                return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
+        }
+        
+        // Показать/скрыть индикатор загрузки
+        function toggleLoading(show) {
+            document.getElementById('loadingIndicator').style.display = show ? 'block' : 'none';
+        }
+        
+        // Загрузка всех товаров
+        async function loadProducts() {
+            toggleLoading(true);
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) {
+                    throw new Error(`Ошибка HTTP: ${response.status}`);
+                }
+                
+                const products = await response.json();
+                updateProductsTable(products);
+            } catch (error) {
+                showNotification('Ошибка при загрузке товаров: ' + error.message, 'error');
+                console.error('Ошибка при загрузке товаров:', error);
+            } finally {
+                toggleLoading(false);
+            }
+        }
+        
+        // Обновление таблицы товаров
+        function updateProductsTable(products) {
+            const tableBody = document.querySelector('#productsTable tbody');
+            tableBody.innerHTML = '';
+            
+            products.forEach(product => {
+                const row = document.createElement('tr');
+                
+                const categoriesHTML = product.categories.map(
+                    category => `<span class="category-tag">${category}</span>`
+                ).join('');
+                
+                row.innerHTML = `
+                    <td>${product.id}</td>
+                    <td>${product.name}</td>
+                    <td>${product.price.toLocaleString('ru-RU')} ₽</td>
+                    <td>${product.description}</td>
+                    <td><div class="categories-container">${categoriesHTML}</div></td>
+                    <td>
+                        <button class="edit" data-id="${product.id}">Редактировать</button>
+                        <button class="delete" data-id="${product.id}">Удалить</button>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+            
+            // Добавляем обработчики для кнопок в таблице
+            document.querySelectorAll('.edit').forEach(button => {
+                button.addEventListener('click', function() {
+                    const productId = this.getAttribute('data-id');
+                    editProduct(productId);
+                });
+            });
+            
+            document.querySelectorAll('.delete').forEach(button => {
+                button.addEventListener('click', function() {
+                    const productId = this.getAttribute('data-id');
+                    deleteProduct(productId);
+                });
+            });
+        }
+        
+        // Добавление нового товара
+        async function addProduct() {
+            const nameInput = document.getElementById('productName');
+            const priceInput = document.getElementById('productPrice');
+            const descriptionInput = document.getElementById('productDescription');
+            const categoriesInput = document.getElementById('productCategories');
+            
+            // Валидация
+            if (!nameInput.value.trim() || !priceInput.value || !descriptionInput.value.trim()) {
+                showNotification('Пожалуйста, заполните все обязательные поля', 'error');
+                return;
+            }
+            
+            const categories = categoriesInput.value
+                .split(',')
+                .map(cat => cat.trim())
+                .filter(cat => cat.length > 0);
+            
+            const productData = [
+                {
+                    name: nameInput.value.trim(),
+                    price: parseFloat(priceInput.value),
+                    description: descriptionInput.value.trim(),
+                    categories: categories.length > 0 ? categories : ['Без категории']
+                }
+            ];
+            
+            toggleLoading(true);
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(productData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Ошибка HTTP: ${response.status}`);
+                }
+                
+                // Очищаем форму
+                nameInput.value = '';
+                priceInput.value = '';
+                descriptionInput.value = '';
+                categoriesInput.value = '';
+                
+                showNotification('Товар успешно добавлен!');
+                
+                // Перезагружаем список товаров
+                loadProducts();
+            } catch (error) {
+                showNotification('Ошибка при добавлении товара: ' + error.message, 'error');
+                console.error('Ошибка при добавлении товара:', error);
+            } finally {
+                toggleLoading(false);
+            }
+        }
+        
+        // Редактирование товара
+        function editProduct(productId) {
+            // Находим товар в таблице
+            const row = document.querySelector(`button.edit[data-id="${productId}"]`).closest('tr');
+            const tds = row.querySelectorAll('td');
+            
+            document.getElementById('editProductId').value = productId;
+            document.getElementById('editProductName').value = tds[1].textContent;
+            document.getElementById('editProductPrice').value = parseFloat(tds[2].textContent.replace(/[^\d,.-]/g, '').replace(',', '.'));
+            document.getElementById('editProductDescription').value = tds[3].textContent;
+            
+            // Получаем категории
+            const categoryTags = tds[4].querySelectorAll('.category-tag');
+            const categories = Array.from(categoryTags).map(tag => tag.textContent);
+            document.getElementById('editProductCategories').value = categories.join(', ');
+            
+            // Показываем форму редактирования
+            document.getElementById('editFormContainer').style.display = 'block';
+            window.scrollTo(0, document.getElementById('editFormContainer').offsetTop);
+        }
+        
+        // Сохранение изменений товара
+        async function saveProductEdit() {
+            const productId = document.getElementById('editProductId').value;
+            const nameInput = document.getElementById('editProductName');
+            const priceInput = document.getElementById('editProductPrice');
+            const descriptionInput = document.getElementById('editProductDescription');
+            const categoriesInput = document.getElementById('editProductCategories');
+            
+            // Валидация
+            if (!nameInput.value.trim() || !priceInput.value || !descriptionInput.value.trim()) {
+                showNotification('Пожалуйста, заполните все обязательные поля', 'error');
+                return;
+            }
+            
+            const categories = categoriesInput.value
+                .split(',')
+                .map(cat => cat.trim())
+                .filter(cat => cat.length > 0);
+            
+            const productData = {
+                name: nameInput.value.trim(),
+                price: parseFloat(priceInput.value),
+                description: descriptionInput.value.trim(),
+                categories: categories.length > 0 ? categories : ['Без категории']
+            };
+            
+            toggleLoading(true);
+            try {
+                const response = await fetch(`${API_URL}/${productId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(productData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Ошибка HTTP: ${response.status}`);
+                }
+                
+                cancelEdit();
+                showNotification('Товар успешно обновлен!');
+                
+                // Перезагружаем список товаров
+                loadProducts();
+            } catch (error) {
+                showNotification('Ошибка при обновлении товара: ' + error.message, 'error');
+                console.error('Ошибка при обновлении товара:', error);
+            } finally {
+                toggleLoading(false);
+            }
+        }
+        
+        // Отмена редактирования
+        function cancelEdit() {
+            document.getElementById('editFormContainer').style.display = 'none';
+        }
+        
+        // Удаление товара
+        async function deleteProduct(productId) {
+            if (!confirm('Вы уверены, что хотите удалить этот товар?')) {
+                return;
+            }
+            
+            toggleLoading(true);
+            try {
+                const response = await fetch(`${API_URL}/${productId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Ошибка HTTP: ${response.status}`);
+                }
+                
+                showNotification('Товар успешно удален!');
+                
+                // Перезагружаем список товаров
+                loadProducts();
+            } catch (error) {
+                showNotification('Ошибка при удалении товара: ' + error.message, 'error');
+                console.error('Ошибка при удалении товара:', error);
+            } finally {
+                toggleLoading(false);
+            }
+        }
+        
+        // Отображение уведомления
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.style.backgroundColor = type === 'success' ? '#4CAF50' : '#f44336';
+            notification.style.display = 'block';
+            
+            // Скрываем уведомление через 3 секунды
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+
+<div id="minimax-floating-ball">
+  <div class="minimax-ball-content">
+    <div class="minimax-logo-wave"></div>
+    <span class="minimax-ball-text">Created by MiniMax Agent</span>
+  </div>
+  <div class="minimax-close-icon">&times;</div>
+</div>
+<style>
+  #minimax-floating-ball {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 10px 12px;
+    background: #222222;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    color: #F8F8F8;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    z-index: 9999;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  
+  #minimax-floating-ball:hover {
+    transform: translateY(-2px);
+    background: #383838;
+  }
+  
+  .minimax-ball-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .minimax-logo-wave {
+    width: 26px;
+    height: 22px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='22' viewBox='0 0 26 22' fill='none'%3E%3Cg clip-path='url(%23clip0_3442_102412)'%3E%3Cpath d='M12.8405 14.6775C12.8405 14.9897 13.0932 15.2424 13.4055 15.2424C13.7178 15.2424 13.9705 14.9897 13.9705 14.6775V2.98254C13.9705 1.88957 13.0809 1 11.9879 1C10.895 1 10.0054 1.88957 10.0054 2.98254V11.566V17.1068C10.0054 17.5773 9.62327 17.9594 9.1528 17.9594C8.68233 17.9594 8.30021 17.5773 8.30021 17.1068V8.04469C8.30021 6.95172 7.41063 6.06215 6.31767 6.06215C5.22471 6.06215 4.33513 6.95172 4.33513 8.04469V11.8855C4.33513 12.3559 3.953 12.7381 3.48254 12.7381C3.01207 12.7381 2.62994 12.3559 2.62994 11.8855V10.4936C2.62994 10.1813 2.37725 9.92861 2.06497 9.92861C1.7527 9.92861 1.5 10.1813 1.5 10.4936V11.8855C1.5 12.9784 2.38957 13.868 3.48254 13.868C4.5755 13.868 5.46508 12.9784 5.46508 11.8855V8.04469C5.46508 7.57422 5.8472 7.19209 6.31767 7.19209C6.78814 7.19209 7.17026 7.57422 7.17026 8.04469V17.1068C7.17026 18.1998 8.05984 19.0894 9.1528 19.0894C10.2458 19.0894 11.1353 18.1998 11.1353 17.1068V2.98254C11.1353 2.51207 11.5175 2.12994 11.9879 2.12994C12.4584 2.12994 12.8405 2.51207 12.8405 2.98254V14.6775Z' fill='%23F8F8F8'/%3E%3Cpath d='M23.3278 6.06215C22.2348 6.06215 21.3452 6.95172 21.3452 8.04469V15.6143C21.3452 16.0847 20.9631 16.4669 20.4926 16.4669C20.0222 16.4669 19.6401 16.0847 19.6401 15.6143V2.98254C19.6401 1.88957 18.7505 1 17.6575 1C16.5645 1 15.675 1.88957 15.675 2.98254V19.0175C15.675 19.4879 15.2928 19.8701 14.8224 19.8701C14.3519 19.8701 13.9698 19.4879 13.9698 19.0175V17.0329C13.9698 16.7206 13.7171 16.4679 13.4048 16.4679C13.0925 16.4679 12.8398 16.7206 12.8398 17.0329V19.0175C12.8398 20.1104 13.7294 21 14.8224 21C15.9153 21 16.8049 20.1104 16.8049 19.0175V2.98254C16.8049 2.51207 17.187 2.12994 17.6575 2.12994C18.128 2.12994 18.5101 2.51207 18.5101 2.98254V15.6143C18.5101 16.7072 19.3997 17.5968 20.4926 17.5968C21.5856 17.5968 22.4752 16.7072 22.4752 15.6143V8.04469C22.4752 7.57422 22.8573 7.19209 23.3278 7.19209C23.7982 7.19209 24.1804 7.57422 24.1804 8.04469V14.6775C24.1804 14.9897 24.4331 15.2424 24.7453 15.2424C25.0576 15.2424 25.3103 14.9897 25.3103 14.6775V8.04469C25.3103 6.95172 24.4207 6.06215 23.3278 6.06215Z' fill='%23F8F8F8'/%3E%3C/g%3E%3Cdefs%3E%3CclipPath id='clip0_3442_102412'%3E%3Crect width='25' height='22' fill='white' transform='translate(0.5)'/%3E%3C/clipPath%3E%3C/defs%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+  }
+  
+  .minimax-ball-text {
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  
+  .minimax-close-icon {
+    margin-left: 8px;
+    font-size: 16px;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+  }
+  
+  .minimax-close-icon:hover {
+    opacity: 1;
+  }
+</style>
+<script>
+  // Add simple animation when the page loads
+  document.addEventListener('DOMContentLoaded', function() {
+    const ball = document.getElementById('minimax-floating-ball');
+    ball.style.opacity = '0';
+    ball.style.transform = 'translateY(20px)';
+    
+    setTimeout(() => {
+      ball.style.opacity = '1';
+      ball.style.transform = 'translateY(0)';
+    }, 500);
+    
+    // Handle logo click
+    const ballContent = ball.querySelector('.minimax-ball-content');
+    ballContent.addEventListener('click', function(e) {
+      e.stopPropagation();
+      window.open('https://agent.minimax.io/agent', '_blank');
+      ball.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+        ball.style.transform = 'scale(1)';
+      }, 100);
+    });
+    
+    // Handle close button click
+    const closeIcon = ball.querySelector('.minimax-close-icon');
+    closeIcon.addEventListener('click', function(e) {
+      e.stopPropagation();
+      ball.style.opacity = '0';
+      ball.style.transform = 'translateY(20px)';
+      
+      // Hide the ball after animation completes
+      setTimeout(() => {
+        ball.style.display = 'none';
+      }, 300);
+    });
+  });
+</script>
+
+</body>
+</html>
